@@ -1,0 +1,14 @@
+{
+  "name": "pathfinder-ssl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "pathfinder-ssl.js",
+  "scripts": {
+    "start": "node pathfinder-ssl.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
