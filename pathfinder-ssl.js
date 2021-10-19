@@ -1,19 +1,30 @@
 const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const express = require('express');
-
-const privateKey = fs.readFileSync('/certs/server.key', 'utf8');
-const certificate = fs.readFileSync('/certs/server.crt', 'utf8');
-let ca
-
-const { MTLS } = process.env
-
-if (MTLS)
-    ca = fs.readFileSync('/certs/ca.crt')
-
-const credentials = { key: privateKey, cert: certificate, ca, rejectUnauthorized: MTLS }
+const pki = require('node-forge').pki;
+const express = require('express')
 const app = express();
+
+const ca = fs.readFileSync('./certs/ca.crt')
+const caStore = pki.createCaStore([pki.certificateFromPem(ca)])
+
+const getCert = (headers) => `
+-----BEGIN CERTIFICATE-----
+${headers['x-ssl-cert']}
+-----END CERTIFICATE-----
+`
+
+
+app.use('*', (req, res, next) => {
+    try {
+        const cert = getCert(req.headers)
+        console.log(cert)
+        pki.verifyCertificateChain(caStore, [pki.certificateFromPem(cert)])
+    } catch (e) {
+        console.log(e)
+        console.log(JSON.stringify(req.headers))
+        return res.status(401).send(e.message || 'Invalid client certificate')
+    }
+    next()
+})
 
 app.get('*', function (req, res) {
     const { originalUrl, headers, secure } = req
@@ -24,14 +35,6 @@ app.get('*', function (req, res) {
     })
 })
 
-
-const httpServer = http.createServer(app)
-const httpsServer = https.createServer(credentials, app)
-
-httpServer.listen(8080)
-httpsServer.listen(8443)
-
-console.log('https in port 8443')
-if (MTLS)
-    console.log('mTLS is enabled')
-console.log('http in port 8080')
+app.listen(8080, () => {
+    console.log(`pathfinder listening at 8080`)
+})
