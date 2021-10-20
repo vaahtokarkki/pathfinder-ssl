@@ -3,7 +3,7 @@ services:
   pathfiner-ssl:
     image: vaahtokarkki/pathfinder-ssl
     environment:
-      - MTLS=true
+      - AUTH=0
     ports:
       - 8080:8080
       - 8443:8443

@@ -3,8 +3,15 @@ const pki = require('node-forge').pki;
 const express = require('express')
 const app = express();
 
-const ca = fs.readFileSync('./certs/ca.crt')
-const caStore = pki.createCaStore([pki.certificateFromPem(ca)])
+const { AUTH } = process.env
+
+let ca
+let caStore
+
+if (Number(AUTH)) {
+    ca = fs.readFileSync('./certs/ca.crt')
+    caStore = pki.createCaStore([pki.certificateFromPem(ca)])
+}
 
 const getCert = (headers) => `
 -----BEGIN CERTIFICATE-----
@@ -14,6 +21,7 @@ ${headers['x-ssl-cert']}
 
 
 app.use('*', (req, res, next) => {
+    if (!Number(AUTH)) return next()
     try {
         const cert = getCert(req.headers)
         console.log(cert)
